@@ -66,6 +66,7 @@ blank_theme <- theme_minimal()+
     axis.text.y=element_blank(),
     plot.title=element_text(size=14, face="italic"),
     legend.title = element_text(size=14, face="bold"),
+    legend.position = "bottom",
     legend.text= element_text(size=13)
   )
 
@@ -189,8 +190,105 @@ library(patchwork)
 
 plots <- plot.gibbus.scott + plot.gibbus.rowleys + plot.decussatus.scott +
    plot.decussatus.rowleys + plot.bohar.scott + plot.bohar.rowleys + 
-   plot_annotation(tag_levels = 'A') + plot_layout(ncol=2, guides = "collect") 
+   plot_annotation(tag_levels = 'A') + plot_layout(ncol=2, guides = "collect") & theme(legend.position = 'bottom')
 plots  
 
 setwd (p.dir)
-ggsave("Gut_contents.png", plots, width=15, height=30, units="cm")
+ggsave("Gut_contents_legend_bottom.png", plots, width=15, height=30, units="cm")
+
+# Make length weight plots ----
+
+df <- read.csv(paste(d.dir,  ("all_species.csv"), sep = '/'), fileEncoding="UTF-8-BOM")%>% #Table 2 from paper
+  mutate_at(vars(Species, Site), list(as.factor)) %>% # make these columns as factors
+  glimpse()
+
+head(df)
+str(df)
+
+# Make a few length weight plots ----
+
+#Theme ----
+
+lw_theme <- theme_minimal()+
+  theme(
+    axis.title.x = element_text(size=14),
+    axis.title.y = element_text(size=14),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.line= element_line(),
+    #panel.grid=element_blank(),
+    axis.ticks = element_line(),
+    axis.text.x=element_text(size=12),
+    axis.text.y=element_text(size=12),
+    plot.title=element_text(size=14, face="italic"),
+    legend.title = element_text(size=14, face="bold"),
+    legend.position = "right",
+    legend.text= element_text(size=13)
+  )
+
+
+# L. gibbus ----
+
+dat.gibbus<- df %>%
+  filter(Species =="L. gibbus")%>%
+  glimpse()
+
+plot.gibbus <- ggplot(dat.gibbus, aes(x=Log.L, y=Log.W, fill=Site, colour=Site))+
+  geom_point( size=2)+
+  scale_fill_manual(values=c( "#adf0d1", "#00203f" ))+
+  scale_colour_manual(values=c( "#adf0d1","#00203f" ))+
+  xlab("Log weight") + ylab("Log length") +
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE,    # Don't add shaded confidence region
+              fullrange=TRUE)+
+  lw_theme + theme(legend.position="none")
+
+plot.gibbus
+
+# L. decussatus ----
+
+dat.decussatus <- df %>%
+  filter(Species =="L. decussatus")%>%
+  glimpse()
+
+plot.decussatus <- ggplot(dat.decussatus, aes(x=Log.L, y=Log.W, fill=Site, colour=Site))+
+  geom_point( size=2)+
+  scale_fill_manual(values=c( "#adf0d1", "#00203f" ))+
+  scale_colour_manual(values=c( "#adf0d1","#00203f" ))+
+  xlab("Log weight") + ylab("Log length") +
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE,    # Don't add shaded confidence region
+              fullrange=TRUE)+
+  lw_theme 
+
+plot.decussatus
+
+# L. bohar ----
+
+dat.bohar <- df %>%
+  filter(Species =="L. bohar")%>%
+  glimpse()
+
+plot.bohar <- ggplot(dat.bohar, aes(x=Log.L, y=Log.W, fill=Site, colour=Site))+
+  geom_point( size=2)+
+  scale_fill_manual(values=c( "#adf0d1", "#00203f" ))+
+  scale_colour_manual(values=c( "#adf0d1","#00203f" ))+
+  xlab("Log weight") + ylab("Log length") +
+  geom_smooth(method=lm,   # Add linear regression lines
+              se=FALSE,    # Don't add shaded confidence region
+              fullrange=TRUE)+
+  lw_theme 
+
+plot.bohar+ theme(legend.position="none")
+
+
+# combine with gut contents
+
+final_plots <- plot.gibbus.scott + plot.gibbus.rowleys + plot.gibbus + 
+  plot.decussatus.scott +  plot.decussatus.rowleys + plot.decussatus +
+  plot.bohar.scott + plot.bohar.rowleys + plot.bohar+
+  plot_annotation(tag_levels = 'A') + plot_layout(ncol=3,nrow=3, guides = "collect") & theme(legend.position = 'right')
+final_plots
+
+setwd (p.dir)
+ggsave("Gut_contents_length_weight.png", final_plots, width=30, height=35, units="cm")
