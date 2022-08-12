@@ -9,6 +9,7 @@ library(dplyr)
 library(stringr)
 library(ggplot2)
 library(tidyverse)
+library(patchwork)
 
 # clear workspace ----
 rm(list = ls())
@@ -47,6 +48,9 @@ dat_sweatman <- read.csv(paste(d.dir, ("sweatman 2008 c.csv"), sep="/"), fileEnc
   mutate_at(vars(zoning, colour), list(as.factor)) %>% # make these columns as factors
   glimpse()
 
+dat_kroon <- read.csv(paste(d.dir, ("Kroon_2021_data.csv"), sep="/"), fileEncoding="UTF-8-BOM")%>% 
+  mutate_at(vars(zone), list(as.factor)) %>% # make these columns as factors
+  glimpse()
 
 # Make a few pretty plots ----
 
@@ -84,13 +88,17 @@ plot_Dulvey2a <- ggplot(dat_Dulvey2a, aes(x=Fishing.pressure, y=Predator.density
 plot_Dulvey2a
 
 # Dulvy 2b ----
-
-plot_Dulvey2b <- ggplot(dat_Dulvey2b, aes(x=fishing.pressure, y=starfish.density, fill=Starfish.present, colour=Starfish.present))+
+dat_Dulvey2b 
+plot_Dulvey2b <- ggplot(dat=dat_Dulvey2b, aes(x=fishing.pressure, y=starfish.density, fill=Starfish.present, colour=Starfish.present))+
   geom_point( size=2)+
   scale_colour_manual(values=c("#084c61", "#177e89"))+
   scale_fill_manual(values=c("#084c61", "#177e89"))+
   #ylim(0,40)+
   xlim(0,60)+
+  geom_smooth(method=lm,   # Add linear regression lines
+              data=subset(dat_Dulvey2b, Starfish.present=="yes"),
+              se=FALSE,    # Don't add shaded confidence region
+              fullrange=TRUE)+
   xlab(bquote(paste("Fishing pressure (people ",km^1, "reef)"))) + 
   ylab(expression ("Predator density "(~gm^2))) +
   lw_theme +
@@ -127,3 +135,36 @@ plot_sweatman <- ggplot(dat_sweatman, aes(x=zoning, y=No.reefs, fill=colour, col
   lw_theme + theme(legend.position="top")
   
 plot_sweatman
+
+# plot Kroon (2021) -----
+
+dat_kroon
+
+
+plot_kroon <- ggplot(dat_kroon, aes(x=zone, y=mean, fill=zone, colour=zone))+
+  geom_point(size=2)+
+  geom_errorbar(aes(ymin=semin, ymax=semax), width=0.2)+
+  scale_colour_manual(values=c("#db3a34", "#177e89"))+
+  scale_fill_manual(values=c("#db3a34", "#177e89"))+
+  #ylim(0,40)+
+ # xlim(0,60)+
+  xlab("Reef zoning status") + 
+  scale_x_discrete(labels=c("Fished", "No-take"))+
+  ylab(bquote(paste("Predicted CoTS counts (2 ",mins^-1, ")"))) +
+  lw_theme +
+  theme(legend.position = "none")
+
+plot_kroon
+
+
+# combine plots ----
+
+combined_dulvy <- plot_Dulvey2a/plot_Dulvey2b
+
+combined_dulvy
+
+combined_plots <- combined_dulvy + (plot_sweatman + plot_kroon) + 
+  plot_layout(ncol = 2, nrow=2)
+
+combined_plots
+# oh no 
